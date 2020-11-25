@@ -24,7 +24,7 @@ namespace ClickerClass.Items.Accessories
 
 		public override void UpdateAccessory(Player player, bool hideVisual)
 		{
-			player.GetModPlayer<ClickerPlayer>().clickerGloveAcc3 = true;
+			player.GetModPlayer<ClickerPlayer>().accRegalClickingGlove = true;
 		}
 
 		public override void AddRecipes()
@@ -32,7 +32,7 @@ namespace ClickerClass.Items.Accessories
 			ModRecipe recipe = new ModRecipe(mod);
 			recipe.AddIngredient(null, "AncientClickingGlove", 1);
 			recipe.AddIngredient(ItemID.HallowedBar, 8);
-			recipe.AddTile(TileID.Anvils);
+			recipe.AddTile(TileID.MythrilAnvil);
 			recipe.SetResult(this);
 			recipe.AddRecipe();
 		}

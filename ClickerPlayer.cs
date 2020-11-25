@@ -57,39 +57,48 @@ namespace ClickerClass
 		public int outOfCombatTimer = 0;
 
 		//Armor
-		public int clickerSetTimer = 0;
-		public float clickerMotherboardSetRatio = 0f;
-		public float clickerMotherboardSetAngle = 0f;
+		public int setAbilityDelayTimer = 0;
+		public float setMotherboardRatio = 0f;
+		public float setMotherboardAngle = 0f;
 		/// <summary>
 		/// Calculated after clickerRadius is calculated, and if the Motherboard set is worn
 		/// </summary>
-		public Vector2 clickerMotherboardSetPosition = Vector2.Zero;
-		public float clickerMotherboardSetAlpha = 0f;
-		public int clickerMotherboardSetFrame = 0;
-		public bool clickerMotherboardSetFrameShift = false;
-		public bool clickerMotherboardSet = false;
-		public bool clickerMiceSetAllowed = true;
-		public bool clickerMiceSet = false;
-		public bool clickerPrecursorSetAllowed = true;
-		public bool clickerPrecursorSet = false;
-		public bool clickerOverclockSetAllowed = true;
-		public bool clickerOverclockSet = false;
+		public Vector2 setMotherboardPosition = Vector2.Zero;
+		public float setMotherboardAlpha = 0f;
+		public int setMotherboardFrame = 0;
+		public bool setMotherboardFrameShift = false;
+		public bool setMotherboard = false;
+		public bool SetMotherboardDraw => setMotherboard && setMotherboardRatio > 0;
+
+
+		public bool setMiceAllowed = true;
+		public bool setMice = false;
+		public bool SetMiceDraw => setMice && setMiceAllowed;
+
+		public bool setPrecursorAllowed = true;
+		public bool setPrecursor = false;
+		public bool SetPrecursorDraw => setPrecursor && setPrecursorAllowed;
+
+		public bool setOverclockAllowed = true;
+		public bool setOverclock = false;
+		public bool SetOverclockDraw => setOverclock && setOverclockAllowed;
 
 		//Acc
-		public bool clickerChocolateChipAcc = false;
-		public bool clickerEnchantedLED = false;
-		public bool clickerEnchantedLED2 = false;
-		public bool clickerAutoClickAcc = false;
-		public bool clickerStickyAcc = false;
-		public bool clickerMilkAcc = false;
-		public bool clickerCookieAcc = false;
-		public bool clickerCookieAcc2 = false;
-		public int clickerCookieAccTimer = 0;
-		public bool clickerGloveAcc = false;
-		public bool clickerGloveAcc2 = false;
-		public bool clickerGloveAcc3 = false;
-		public int clickerGloveAccTimer = 0;
-		public bool clickerParticleAcc = false;
+		public bool accChocolateChip = false;
+		public bool accEnchantedLED = false;
+		public bool accEnchantedLED2 = false; //different visuals
+		public bool accHandCream = false;
+		public bool accStickyKeychain = false;
+		public bool accGlassOfMilk = false;
+		public bool accCookie = false;
+		public bool accCookie2 = false; //different visuals
+		public bool accClickingGlove = false;
+		public bool accAncientClickingGlove = false;
+		public bool accRegalClickingGlove = false;
+		public bool accPortableParticleAccelerator = false; //add to api when implemented
+
+		public int accClickingGloveTimer = 0;
+		public int accCookieTimer = 0;
 
 		//Stats
 		/// <summary>
@@ -138,8 +147,8 @@ namespace ClickerClass
 		/// </summary>
 		public Vector2 CalculateMotherboardPosition()
 		{
-			float length = clickerMotherboardSetRatio * ClickerRadiusReal;
-			Vector2 direction = clickerMotherboardSetAngle.ToRotationVector2();
+			float length = setMotherboardRatio * ClickerRadiusReal;
+			Vector2 direction = setMotherboardAngle.ToRotationVector2();
 			return direction * length;
 		}
 
@@ -152,8 +161,8 @@ namespace ClickerClass
 			float length = toPosition.Length();
 			float radius = ClickerRadiusReal;
 			float ratio = length / radius;
-			clickerMotherboardSetRatio = ratio;
-			clickerMotherboardSetAngle = toPosition.ToRotation();
+			setMotherboardRatio = ratio;
+			setMotherboardAngle = toPosition.ToRotation();
 		}
 
 		internal int originalSelectedItem;
@@ -209,28 +218,28 @@ namespace ClickerClass
 			clickerDrawRadius = false;
 
 			//Armor
-			clickerMiceSetAllowed = true;
-			clickerMotherboardSet = false;
-			clickerMiceSetAllowed = true;
-			clickerMiceSet = false;
-			clickerPrecursorSetAllowed = true;
-			clickerPrecursorSet = false;
-			clickerOverclockSetAllowed = true;
-			clickerOverclockSet = false;
+			setMiceAllowed = true;
+			setMotherboard = false;
+			setMiceAllowed = true;
+			setMice = false;
+			setPrecursorAllowed = true;
+			setPrecursor = false;
+			setOverclockAllowed = true;
+			setOverclock = false;
 
 			//Acc
-			clickerChocolateChipAcc = false;
-			clickerEnchantedLED = false;
-			clickerEnchantedLED2 = false;
-			clickerStickyAcc = false;
-			clickerAutoClickAcc = false;
-			clickerMilkAcc = false;
-			clickerCookieAcc = false;
-			clickerCookieAcc2 = false;
-			clickerGloveAcc = false;
-			clickerGloveAcc2 = false;
-			clickerGloveAcc3 = false;
-			clickerParticleAcc = false;
+			accChocolateChip = false;
+			accEnchantedLED = false;
+			accEnchantedLED2 = false;
+			accStickyKeychain = false;
+			accHandCream = false;
+			accGlassOfMilk = false;
+			accCookie = false;
+			accCookie2 = false;
+			accClickingGlove = false;
+			accAncientClickingGlove = false;
+			accRegalClickingGlove = false;
+			accPortableParticleAccelerator = false;
 
 			//Stats
 			clickerCrit = 4;
@@ -297,20 +306,20 @@ namespace ClickerClass
 			{
 				if (player.itemTime == 0 && player.itemAnimation == 0)
 				{
-					if (clickerGloveAcc3 && clickerGloveAccTimer > 30)
+					if (accRegalClickingGlove && accClickingGloveTimer > 30)
 					{
 						QuickUseItemInSlot(player.selectedItem);
-						clickerGloveAccTimer = 0;
+						accClickingGloveTimer = 0;
 					}
-					else if (clickerGloveAcc2 && clickerGloveAccTimer > 60)
+					else if (accAncientClickingGlove && accClickingGloveTimer > 60)
 					{
 						QuickUseItemInSlot(player.selectedItem);
-						clickerGloveAccTimer = 0;
+						accClickingGloveTimer = 0;
 					}
-					else if (clickerGloveAcc && clickerGloveAccTimer > 180)
+					else if (accClickingGlove && accClickingGloveTimer > 180)
 					{
 						QuickUseItemInSlot(player.selectedItem);
-						clickerGloveAccTimer = 0;
+						accClickingGloveTimer = 0;
 					}
 				}
 			}
@@ -324,38 +333,38 @@ namespace ClickerClass
 				clickerClassTime = 0;
 			}
 
-			if (!clickerAutoClickAcc)
+			if (!accHandCream)
 			{
 				clickerAutoClick = false;
 			}
 
-			if (clickerSetTimer > 0)
+			if (setAbilityDelayTimer > 0)
 			{
-				clickerSetTimer--;
+				setAbilityDelayTimer--;
 			}
 
-			if (!clickerMotherboardSet)
+			if (!setMotherboard)
 			{
-				clickerMotherboardSetPosition = Vector2.Zero;
-				clickerMotherboardSetRatio = 0f;
-				clickerMotherboardSetAngle = 0f;
+				setMotherboardPosition = Vector2.Zero;
+				setMotherboardRatio = 0f;
+				setMotherboardAngle = 0f;
 			}
 			else
 			{
-				clickerMotherboardSetAlpha += !clickerMotherboardSetFrameShift ? 0.025f : -0.025f;
-				if (clickerMotherboardSetAlpha >= 1f)
+				setMotherboardAlpha += !setMotherboardFrameShift ? 0.025f : -0.025f;
+				if (setMotherboardAlpha >= 1f)
 				{
-					clickerMotherboardSetFrameShift = true;
+					setMotherboardFrameShift = true;
 				}
 
-				if (clickerMotherboardSetFrameShift && clickerMotherboardSetAlpha <= 0.25f)
+				if (setMotherboardFrameShift && setMotherboardAlpha <= 0.25f)
 				{
-					clickerMotherboardSetFrame++;
-					if (clickerMotherboardSetFrame >= 4)
+					setMotherboardFrame++;
+					if (setMotherboardFrame >= 4)
 					{
-						clickerMotherboardSetFrame = 0;
+						setMotherboardFrame = 0;
 					}
-					clickerMotherboardSetFrameShift = false;
+					setMotherboardFrameShift = false;
 				}
 			}
 
@@ -383,27 +392,27 @@ namespace ClickerClass
 				{
 					clickerInRange = true;
 				}
-				if (clickerMotherboardSet)
+				if (setMotherboard)
 				{
 					//Important: has to be after final clickerRadius calculation because it depends on it
-					clickerMotherboardSetPosition = player.Center + CalculateMotherboardPosition();
+					setMotherboardPosition = player.Center + CalculateMotherboardPosition();
 				}
 
 				//collision
-				if (Vector2.Distance(Main.MouseWorld, clickerMotherboardSetPosition) < ClickerRadiusMotherboard && Collision.CanHit(clickerMotherboardSetPosition, 1, 1, Main.MouseWorld, 1, 1))
+				if (Vector2.Distance(Main.MouseWorld, setMotherboardPosition) < ClickerRadiusMotherboard && Collision.CanHit(setMotherboardPosition, 1, 1, Main.MouseWorld, 1, 1))
 				{
 					clickerInRangeMotherboard = true;
 				}
 				clickerColor = clickerItem.clickerColorItem;
 
 				//Glove acc
-				if (!outOfCombat && (clickerGloveAcc || clickerGloveAcc2 || clickerGloveAcc3))
+				if (!outOfCombat && (accClickingGlove || accAncientClickingGlove || accRegalClickingGlove))
 				{
-					clickerGloveAccTimer++;
+					accClickingGloveTimer++;
 				}
 				else
 				{
-					clickerGloveAccTimer = 0;
+					accClickingGloveTimer = 0;
 				}
 			}
 
@@ -430,76 +439,76 @@ namespace ClickerClass
 
 			if (player.wereWolf || player.merman)
 			{
-				clickerMiceSetAllowed = false;
-				clickerPrecursorSetAllowed = false;
-				clickerOverclockSetAllowed = false;
+				setMiceAllowed = false;
+				setPrecursorAllowed = false;
+				setOverclockAllowed = false;
 			}
 
 			if (itemVanityHead.type > 0)
 			{
 				if (itemVanityHead.type != ModContent.ItemType<MiceMask>())
 				{
-					clickerMiceSetAllowed = false;
+					setMiceAllowed = false;
 				}
 				if (itemVanityHead.type != ModContent.ItemType<PrecursorHelmet>())
 				{
-					clickerPrecursorSetAllowed = false;
+					setPrecursorAllowed = false;
 				}
 				if (itemVanityHead.type != ModContent.ItemType<OverclockHelmet>())
 				{
-					clickerOverclockSetAllowed = false;
+					setOverclockAllowed = false;
 				}
 			}
 			if (itemVanityBody.type > 0)
 			{
 				if (itemVanityBody.type != ModContent.ItemType<MiceSuit>())
 				{
-					clickerMiceSetAllowed = false;
+					setMiceAllowed = false;
 				}
 				if (itemVanityBody.type != ModContent.ItemType<PrecursorBreastplate>())
 				{
-					clickerPrecursorSetAllowed = false;
+					setPrecursorAllowed = false;
 				}
 				if (itemVanityBody.type != ModContent.ItemType<OverclockSuit>())
 				{
-					clickerOverclockSetAllowed = false;
+					setOverclockAllowed = false;
 				}
 			}
 			if (itemVanityLegs.type > 0)
 			{
 				if (itemVanityLegs.type != ModContent.ItemType<MiceBoots>())
 				{
-					clickerMiceSetAllowed = false;
+					setMiceAllowed = false;
 				}
 				if (itemVanityLegs.type != ModContent.ItemType<PrecursorGreaves>())
 				{
-					clickerPrecursorSetAllowed = false;
+					setPrecursorAllowed = false;
 				}
 				if (itemVanityLegs.type != ModContent.ItemType<OverclockBoots>())
 				{
-					clickerOverclockSetAllowed = false;
+					setOverclockAllowed = false;
 				}
 			}
 
-			if (clickerOverclockSet && clickerOverclockSetAllowed)
+			if (SetOverclockDraw)
 			{
 				Lighting.AddLight(player.position, 0.3f, 0.075f, 0.075f);
 			}
-			if (clickerPrecursorSet && clickerPrecursorSetAllowed)
+			if (SetPrecursorDraw)
 			{
 				Lighting.AddLight(player.position, 0.2f, 0.15f, 0.05f);
 			}
-			if (clickerMiceSet && clickerMiceSetAllowed)
+			if (SetMiceDraw)
 			{
 				Lighting.AddLight(player.position, 0.1f, 0.1f, 0.3f);
 			}
 
 			//Acc
 			//Cookie acc
-			if ((clickerCookieAcc || clickerCookieAcc2) && clickerSelected)
+			if ((accCookie || accCookie2) && clickerSelected)
 			{
-				clickerCookieAccTimer++;
-				if (player.whoAmI == Main.myPlayer && clickerCookieAccTimer > 600)
+				accCookieTimer++;
+				if (player.whoAmI == Main.myPlayer && accCookieTimer > 600)
 				{
 					int radius = (int)(95 * clickerRadius);
 					if (radius > 350)
@@ -513,7 +522,7 @@ namespace ClickerClass
 					double xOffset = player.Center.X + r * Math.Cos(theta);
 					double yOffset = player.Center.Y + r * Math.Sin(theta);
 
-					if (clickerCookieAcc2 && Main.rand.NextFloat() <= 0.1f)
+					if (accCookie2 && Main.rand.NextFloat() <= 0.1f)
 					{
 						Projectile.NewProjectile((float)(xOffset), (float)(yOffset), 0f, 0f, mod.ProjectileType("CookiePro"), 0, 0f, player.whoAmI, 1f);
 					}
@@ -522,7 +531,7 @@ namespace ClickerClass
 						Projectile.NewProjectile((float)(xOffset), (float)(yOffset), 0f, 0f, mod.ProjectileType("CookiePro"), 0, 0f, player.whoAmI);
 					}
 
-					clickerCookieAccTimer = 0;
+					accCookieTimer = 0;
 				}
 
 				//Cookie Click
@@ -565,7 +574,7 @@ namespace ClickerClass
 			}
 
 			//Milk acc
-			if (clickerMilkAcc)
+			if (accGlassOfMilk)
 			{
 				float bonusDamage = (float)(clickerPerSecond + 0.015f);
 				if (bonusDamage >= 0.15f)
@@ -679,16 +688,16 @@ namespace ClickerClass
 			}
 			Mod mod = ModLoader.GetMod("ClickerClass");
 
-			if (modPlayer.clickerMiceSet && modPlayer.clickerMiceSetAllowed)
+			if (modPlayer.SetMiceDraw)
 			{
 				texture = mod.GetTexture("Glowmasks/MiceMask_Glow");
 			}
-			if (modPlayer.clickerPrecursorSet && modPlayer.clickerPrecursorSetAllowed)
+			if (modPlayer.SetPrecursorDraw)
 			{
 				texture = mod.GetTexture("Glowmasks/PrecursorHelmet_Glow");
 				color *= 0.5f;
 			}
-			if (modPlayer.clickerOverclockSet && modPlayer.clickerOverclockSetAllowed)
+			if (modPlayer.SetOverclockDraw)
 			{
 				texture = mod.GetTexture("Glowmasks/OverclockHelmet_Glow");
 				color *= 0.75f;
@@ -721,7 +730,7 @@ namespace ClickerClass
 			}
 			Mod mod = ModLoader.GetMod("ClickerClass");
 
-			if (modPlayer.clickerMiceSet && modPlayer.clickerMiceSetAllowed)
+			if (modPlayer.SetMiceDraw)
 			{
 				if (drawPlayer.Male)
 				{
@@ -732,7 +741,7 @@ namespace ClickerClass
 					texture = mod.GetTexture("Glowmasks/MiceSuitFemale_Glow");
 				}
 			}
-			if (modPlayer.clickerPrecursorSet && modPlayer.clickerPrecursorSetAllowed)
+			if (modPlayer.SetPrecursorDraw)
 			{
 				if (drawPlayer.Male)
 				{
@@ -745,7 +754,7 @@ namespace ClickerClass
 					color *= 0.5f;
 				}
 			}
-			if (modPlayer.clickerOverclockSet && modPlayer.clickerOverclockSetAllowed)
+			if (modPlayer.SetOverclockDraw)
 			{
 				if (drawPlayer.Male)
 				{
@@ -786,16 +795,16 @@ namespace ClickerClass
 			}
 			Mod mod = ModLoader.GetMod("ClickerClass");
 
-			if (modPlayer.clickerMiceSet && modPlayer.clickerMiceSetAllowed)
+			if (modPlayer.SetMiceDraw)
 			{
 				texture = mod.GetTexture("Glowmasks/MiceSuitArm_Glow");
 			}
-			if (modPlayer.clickerPrecursorSet && modPlayer.clickerPrecursorSetAllowed)
+			if (modPlayer.SetPrecursorDraw)
 			{
 				texture = mod.GetTexture("Glowmasks/PrecursorBreastplateArm_Glow");
 				color *= 0.5f;
 			}
-			if (modPlayer.clickerOverclockSet && modPlayer.clickerOverclockSetAllowed)
+			if (modPlayer.SetOverclockDraw)
 			{
 				texture = mod.GetTexture("Glowmasks/OverclockSuitArm_Glow");
 				color *= 0.75f;
@@ -828,16 +837,16 @@ namespace ClickerClass
 			}
 			Mod mod = ModLoader.GetMod("ClickerClass");
 
-			if (modPlayer.clickerMiceSet && modPlayer.clickerMiceSetAllowed)
+			if (modPlayer.SetMiceDraw)
 			{
 				texture = mod.GetTexture("Glowmasks/MiceBoots_Glow");
 			}
-			if (modPlayer.clickerPrecursorSet && modPlayer.clickerPrecursorSetAllowed)
+			if (modPlayer.SetPrecursorDraw)
 			{
 				texture = mod.GetTexture("Glowmasks/PrecursorGreaves_Glow");
 				color *= 0.5f;
 			}
-			if (modPlayer.clickerOverclockSet && modPlayer.clickerOverclockSetAllowed)
+			if (modPlayer.SetOverclockDraw)
 			{
 				texture = mod.GetTexture("Glowmasks/OverclockBoots_Glow");
 				color *= 0.75f;
@@ -899,7 +908,7 @@ namespace ClickerClass
 
 			if (modPlayer.clickerSelected && modPlayer.clickerDrawRadius)
 			{
-				if (modPlayer.clickerMotherboardSet && modPlayer.clickerMotherboardSetRatio > 0)
+				if (modPlayer.SetMotherboardDraw)
 				{
 					Mod mod = ModLoader.GetMod("ClickerClass");
 					float glow = modPlayer.clickerInRangeMotherboard ? 0.6f : 0f;
@@ -918,10 +927,10 @@ namespace ClickerClass
 					Main.playerDrawData.Add(drawData);
 
 					Rectangle frame = new Rectangle(0, 0, 30, 30);
-					frame.Y += 30 * modPlayer.clickerMotherboardSetFrame;
+					frame.Y += 30 * modPlayer.setMotherboardFrame;
 
 					texture = mod.GetTexture("Glowmasks/MotherboardSetBonus2_Glow");
-					drawData = new DrawData(texture, drawPos, frame, new Color(255, 255, 255, 100) * modPlayer.clickerMotherboardSetAlpha, 0f, new Vector2(texture.Width / 2, frame.Height / 2), 1f, SpriteEffects.None, 0)
+					drawData = new DrawData(texture, drawPos, frame, new Color(255, 255, 255, 100) * modPlayer.setMotherboardAlpha, 0f, new Vector2(texture.Width / 2, frame.Height / 2), 1f, SpriteEffects.None, 0)
 					{
 						ignorePlayerRotation = true
 					};
