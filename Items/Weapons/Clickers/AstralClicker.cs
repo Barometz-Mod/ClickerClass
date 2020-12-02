@@ -1,3 +1,4 @@
+using ClickerClass.Dusts;
 using Microsoft.Xna.Framework;
 using Terraria;
 using Terraria.ID;
@@ -18,7 +19,7 @@ namespace ClickerClass.Items.Weapons.Clickers
 			base.SetDefaults();
 			SetRadius(item, 6f);
 			SetColor(item, new Color(150, 150, 225, 0));
-			SetDust(item, mod.DustType("MiceDust"));
+			SetDust(item, ModContent.DustType<MiceDust>());
 			SetAmount(item, 15);
 			SetEffect(item, "Spiral");
 
@@ -32,7 +33,7 @@ namespace ClickerClass.Items.Weapons.Clickers
 		public override void AddRecipes()
 		{
 			ModRecipe recipe = new ModRecipe(mod);
-			recipe.AddIngredient(null, "MiceFragment", 18);
+			recipe.AddIngredient(ModContent.ItemType<MiceFragment>(), 18);
 			recipe.AddTile(TileID.LunarCraftingStation);
 			recipe.SetResult(this);
 			recipe.AddRecipe();
