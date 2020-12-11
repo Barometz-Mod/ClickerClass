@@ -9,6 +9,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Terraria;
 using Terraria.DataStructures;
 using Terraria.GameInput;
@@ -26,7 +27,7 @@ namespace ClickerClass
 
 		//-Clicker-
 		//Misc
-		public Color clickerColor = new Color(0, 0, 0, 0);
+		public Color clickerRadiusColor = Color.White;
 		/// <summary>
 		/// Visual indicator that the cursor is inside clicker radius
 		/// </summary>
@@ -42,8 +43,6 @@ namespace ClickerClass
 		/// </summary>
 		public bool clickerDrawRadius = false;
 		public bool clickerAutoClick = false;
-		public int clickerPerSecondTimer = 0;
-		public int clickerPerSecond = 0;
 		/// <summary>
 		/// Saved amount of clicks done with any clicker, accumulated, fluff
 		/// </summary>
@@ -52,6 +51,21 @@ namespace ClickerClass
 		/// Amount of clicks done, constantly incremented
 		/// </summary>
 		public int clickAmount = 0;
+		/// <summary>
+		/// cps
+		/// </summary>
+		public int clickerPerSecond = 0;
+		private const int ClickQueueCount = 60;
+		/// <summary>
+		/// Keeps track of clicks done in the last <see cref="ClickQueueCount"/> ticks. true if a click occured, otherwise false
+		/// </summary>
+		private Queue<bool> clicks;
+
+		//Click effects
+		/// <summary>
+		/// Used to track effect names that are currently active. Resets every tick
+		/// </summary>
+		private Dictionary<string, bool> ClickEffectActive = new Dictionary<string, bool>();
 
 		//Out of combat
 		public bool outOfCombat = true;
@@ -85,10 +99,12 @@ namespace ClickerClass
 		public bool SetOverclockDraw => setOverclock && setOverclockAllowed;
 
 		//Acc
+		[Obsolete("Use HasClickEffect(\"ClickerClass:ChocolateChip\") and EnableClickEffect(\"ClickerClass:ChocolateChip\") instead", false)]
 		public bool accChocolateChip = false;
 		public bool accEnchantedLED = false;
 		public bool accEnchantedLED2 = false; //different visuals
 		public bool accHandCream = false;
+		[Obsolete("Use HasClickEffect(\"ClickerClass:StickyKeychain\") and EnableClickEffect(\"ClickerClass:StickyKeychain\") instead", false)]
 		public bool accStickyKeychain = false;
 		public bool accGlassOfMilk = false;
 		public bool accCookie = false;
@@ -144,6 +160,115 @@ namespace ClickerClass
 
 		//Helper methods
 		/// <summary>
+		/// Enables the use of a click effect for this player
+		/// </summary>
+		/// <param name="name">The unique effect name</param>
+		public void EnableClickEffect(string name)
+		{
+			if (ClickEffectActive.TryGetValue(name, out _))
+			{
+				ClickEffectActive[name] = true;
+			}
+		}
+
+		/// <summary>
+		/// Enables the use of click effects for this player
+		/// </summary>
+		/// <param name="names">The unique effect names</param>
+		public void EnableClickEffect(IEnumerable<string> names)
+		{
+			foreach (var name in names)
+			{
+				EnableClickEffect(name);
+			}
+		}
+
+		/// <summary>
+		/// Checks if the player has a click effect enabled
+		/// </summary>
+		/// <param name="name">The unique effect name</param>
+		/// <returns><see langword="true"/> if enabled</returns>
+		public bool HasClickEffect(string name)
+		{
+			if (ClickEffectActive.TryGetValue(name, out _))
+			{
+				return ClickEffectActive[name];
+			}
+			return false;
+		}
+
+		/// <summary>
+		/// Checks if the player has a click effect enabled
+		/// </summary>
+		/// <param name="name">The unique effect name</param>
+		/// <param name="effect">The effect associated with the name</param>
+		/// <returns><see langword="true"/> if enabled</returns>
+		public bool HasClickEffect(string name, out ClickEffect effect)
+		{
+			effect = null;
+			if (HasClickEffect(name))
+			{
+				return ClickerSystem.IsClickEffect(name, out effect);
+			}
+			return false;
+		}
+
+		//Unused yet
+		public bool HasAnyClickEffect()
+		{
+			foreach (var value in ClickEffectActive.Values)
+			{
+				if (value) return true;
+			}
+			return false;
+		}
+
+		internal void ResetAllClickEffects()
+		{
+			//Stupid trick to be able to write to a value in a dictionary
+			foreach (var key in ClickEffectActive.Keys.ToList())
+			{
+				ClickEffectActive[key] = false;
+			}
+		}
+
+		/// <summary>
+		/// Call to register a click
+		/// </summary>
+		internal void Click()
+		{
+			clickAmount++;
+			clickerTotal++;
+
+			clicks.Enqueue(true);
+		}
+
+		private void FillClickQueue()
+		{
+			int missing = ClickQueueCount - clicks.Count;
+			for (int i = 0; i < missing; i++)
+			{
+				clicks.Enqueue(false);
+			}
+		}
+
+		/// <summary>
+		/// Manages the click queue and calculates <see cref="clickerPerSecond"/>
+		/// </summary>
+		private void HandleCPS()
+		{
+			if (clicks.Count < ClickQueueCount - 1)
+			{
+				FillClickQueue();
+			}
+
+			//Queue can get more than ClickQueueCount: when a click happens
+			clicks.Dequeue();
+
+			clickerPerSecond = clicks.Count(val => val);
+		}
+
+		/// <summary>
 		/// Returns the position from the ratio and angle
 		/// </summary>
 		public Vector2 CalculateMotherboardPosition()
@@ -192,31 +317,39 @@ namespace ClickerClass
 		}
 
 		/// <summary>
-		/// Returns the amount of clicks required for an effect to trigger. Includes various bonuses
+		/// Returns the amount of clicks required for an effect of the given name to trigger (defaults to the item's assigned effect). Includes various bonuses
 		/// </summary>
-		public int GetClickAmountTotal(ClickerItemCore clickerItem)
+		public int GetClickAmountTotal(ClickerItemCore clickerItem, string name)
 		{
 			//Doesn't go below 1
-			return Math.Max(1, (int)((clickerItem.itemClickerAmount + clickerItem.clickBoostPrefix - clickerBonus) * clickerBonusPercent));
+			int amount = 1;
+			if (ClickerSystem.IsClickEffect(name, out ClickEffect effect))
+			{
+				amount = effect.Amount;
+			}
+			return Math.Max(1, (int)((amount + clickerItem.clickBoostPrefix - clickerBonus) * clickerBonusPercent));
 		}
 
 		/// <summary>
-		/// Returns the amount of clicks required for an effect to trigger. Includes various bonuses
+		/// Returns the amount of clicks required for the effect of this item to trigger. Includes various bonuses
 		/// </summary>
-		public int GetClickAmountTotal(Item item)
+		public int GetClickAmountTotal(Item item, string name)
 		{
-			return GetClickAmountTotal(item.GetGlobalItem<ClickerItemCore>());
+			return GetClickAmountTotal(item.GetGlobalItem<ClickerItemCore>(), name);
 		}
 
 		public override void ResetEffects()
 		{
 			//-Clicker-
 			//Misc
-			clickerColor = new Color(0, 0, 0, 0);
+			clickerRadiusColor = Color.White;
 			clickerInRange = false;
 			clickerInRangeMotherboard = false;
 			clickerSelected = false;
 			clickerDrawRadius = false;
+
+			//Click Effects
+			ResetAllClickEffects();
 
 			//Armor
 			setMiceAllowed = true;
@@ -229,10 +362,8 @@ namespace ClickerClass
 			setOverclock = false;
 
 			//Acc
-			accChocolateChip = false;
 			accEnchantedLED = false;
 			accEnchantedLED2 = false;
-			accStickyKeychain = false;
 			accHandCream = false;
 			accGlassOfMilk = false;
 			accCookie = false;
@@ -254,6 +385,15 @@ namespace ClickerClass
 		public override void Initialize()
 		{
 			clickerTotal = 0;
+
+			ClickEffectActive = new Dictionary<string, bool>();
+			foreach (var name in ClickerSystem.GetAllEffectNames())
+			{
+				ClickEffectActive.Add(name, false);
+			}
+
+			clicks = new Queue<bool>();
+			FillClickQueue();
 		}
 
 		public override TagCompound Save()
@@ -371,9 +511,10 @@ namespace ClickerClass
 
 			if (ClickerSystem.IsClickerWeapon(player.HeldItem, out ClickerItemCore clickerItem))
 			{
+				EnableClickEffect(clickerItem.itemClickEffects);
 				clickerSelected = true;
 				clickerDrawRadius = true;
-				if (clickerItem.itemClickerEffect.Contains("Phase Reach"))
+				if (HasClickEffect(ClickEffect.PhaseReach))
 				{
 					clickerDrawRadius = false;
 				}
@@ -404,7 +545,7 @@ namespace ClickerClass
 				{
 					clickerInRangeMotherboard = true;
 				}
-				clickerColor = clickerItem.clickerColorItem;
+				clickerRadiusColor = clickerItem.clickerRadiusColor;
 
 				//Glove acc
 				if (!outOfCombat && (accClickingGlove || accAncientClickingGlove || accRegalClickingGlove))
@@ -493,15 +634,15 @@ namespace ClickerClass
 
 			if (SetOverclockDraw)
 			{
-				Lighting.AddLight(player.position, 0.3f, 0.075f, 0.075f);
+				Lighting.AddLight(player.Center, 0.3f, 0.075f, 0.075f);
 			}
 			if (SetPrecursorDraw)
 			{
-				Lighting.AddLight(player.position, 0.2f, 0.15f, 0.05f);
+				Lighting.AddLight(player.Center, 0.2f, 0.15f, 0.05f);
 			}
 			if (SetMiceDraw)
 			{
-				Lighting.AddLight(player.position, 0.1f, 0.1f, 0.3f);
+				Lighting.AddLight(player.Center, 0.1f, 0.1f, 0.3f);
 			}
 
 			//Acc
@@ -574,27 +715,17 @@ namespace ClickerClass
 				}
 			}
 
+			HandleCPS();
+
 			//Milk acc
 			if (accGlassOfMilk)
 			{
-				float bonusDamage = (float)(clickerPerSecond + 0.015f);
+				float bonusDamage = (float)(clickerPerSecond * 0.015f);
 				if (bonusDamage >= 0.15f)
 				{
 					bonusDamage = 0.15f;
 				}
 				clickerDamage += bonusDamage;
-
-				clickerPerSecondTimer++;
-				if (clickerPerSecondTimer > 60)
-				{
-					clickerPerSecond = 0;
-					clickerPerSecondTimer = 0;
-				}
-			}
-			else
-			{
-				clickerPerSecondTimer = 0;
-				clickerPerSecond = 0;
 			}
 
 			// Out of Combat timer
@@ -914,7 +1045,7 @@ namespace ClickerClass
 					Mod mod = ModLoader.GetMod("ClickerClass");
 					float glow = modPlayer.clickerInRangeMotherboard ? 0.6f : 0f;
 
-					Color outer = modPlayer.clickerColor * (0.2f + glow);
+					Color outer = modPlayer.clickerRadiusColor * (0.2f + glow);
 					int drawX = (int)(drawPlayer.Center.X - Main.screenPosition.X);
 					int drawY = (int)(drawPlayer.Center.Y + drawPlayer.gfxOffY - Main.screenPosition.Y);
 					Vector2 center = new Vector2(drawX, drawY);
